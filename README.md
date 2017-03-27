@@ -8,4 +8,4 @@ global part.
 When using this option, rEFInd will modify the `gpu-power-prefs` EFI variable,
 may enable some MacBooks with broken external GPUs to boot.
 
-Binaries can be downloaded (here)[https://github.com/jclehner/refind/releases].
+Binaries can be downloaded [here](https://github.com/jclehner/refind/releases).
