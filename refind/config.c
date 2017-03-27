@@ -493,6 +493,53 @@ static VOID SetDefaultByTime(IN CHAR16 **TokenList, OUT CHAR16 **Default) {
    } // if ((StartTime <= LAST_MINUTE) && (EndTime <= LAST_MINUTE))
 } // VOID SetDefaultByTime()
 
+static VOID SetNextBootGpu(CHAR8 gpu)
+{
+	EFI_STATUS    Status;
+	CHAR8         *Value;
+	CHAR16        String[256];
+	UINTN         Length;
+	EFI_GUID      Guid = GPU_POWER_PREFS_GUID_VALUE;
+	EG_PIXEL      BGColor;
+
+	BGColor.b = 255;
+	BGColor.g = 175;
+	BGColor.r = 100;
+	BGColor.a = 0;
+
+	String[0] = 0;
+	Length = 0;
+
+	Status = EfivarGetRaw(&Guid, L"gpu-power-prefs", &Value, &Length);
+	if (Status == EFI_SUCCESS) {
+		if (Length != 8) {
+			SPrint(String, sizeof(String) - 1, L"Unexpected gpu-power-prefs length (%d)", Length);
+			egDisplayMessage(String, &BGColor);
+		} else if (Value[0] != 0x07) {
+			SPrint(String, sizeof(String) - 1, L"Unexpected gpu-power-prefs[0] value (0x%02x)", Value[0]);
+			egDisplayMessage(String, &BGColor);
+		} else {
+			Value[4] = gpu;
+			Status = EfivarSetRaw(&Guid, L"gpu-power-prefs", Value, Length, 1);
+			if (Status != EFI_SUCCESS) {
+				SPrint(String, sizeof(String) - 1, L"Failed to write gpu-power-prefs");
+				egDisplayMessage(String, &BGColor);
+			}
+		}
+	} else {
+		SPrint(String, sizeof(String) - 1, L"Failed to read gpu-power-prefs");
+		egDisplayMessage(String, &BGColor);
+	}
+
+	if (Length) {
+		MyFreePool(Value);
+	}
+
+	if (String[0]) {
+		PauseSeconds(5);
+	}
+}
+
 // read config file
 VOID ReadConfig(CHAR16 *FileName)
 {
@@ -763,7 +810,13 @@ VOID ReadConfig(CHAR16 *FileName)
 
         } else if (MyStriCmp(TokenList[0], L"enable_touch")) {
            GlobalConfig.EnableTouch = HandleBoolean(TokenList, TokenCount);
-        }
+
+        } else if (MyStriCmp(TokenList[0], L"disable_ext_gpu") && (TokenCount > 1)) {
+            /* FIXME use something like Entry->DisableExtGpu and move this elsewhere */
+            if (!MyStriCmp(TokenList[1], L"on")) {
+                SetNextBootGpu(1);
+            }
+		}
 
         FreeTokenLine(&TokenList, &TokenCount);
     }
