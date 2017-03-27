@@ -498,7 +498,7 @@ static VOID SetNextBootGpu(CHAR8 gpu)
 	EFI_STATUS    Status;
 	CHAR8         *Value;
 	CHAR16        String[256];
-	UINTN         Length;
+	UINTN         Length, Offset;
 	EFI_GUID      Guid = GPU_POWER_PREFS_GUID_VALUE;
 	EG_PIXEL      BGColor;
 
@@ -509,34 +509,29 @@ static VOID SetNextBootGpu(CHAR8 gpu)
 
 	String[0] = 0;
 	Length = 0;
+    Value = NULL;
 
 	Status = EfivarGetRaw(&Guid, L"gpu-power-prefs", &Value, &Length);
 	if (Status == EFI_SUCCESS) {
-		if (Length != 8) {
-			SPrint(String, sizeof(String) - 1, L"Unexpected gpu-power-prefs length (%d)", Length);
-			egDisplayMessage(String, &BGColor);
-		} else if (Value[0] != 0x07) {
-			SPrint(String, sizeof(String) - 1, L"Unexpected gpu-power-prefs[0] value (0x%02x)", Value[0]);
-			egDisplayMessage(String, &BGColor);
-		} else {
-			Value[4] = gpu;
-			Status = EfivarSetRaw(&Guid, L"gpu-power-prefs", Value, Length, 1);
-			if (Status != EFI_SUCCESS) {
-				SPrint(String, sizeof(String) - 1, L"Failed to write gpu-power-prefs");
-				egDisplayMessage(String, &BGColor);
-			}
-		}
-	} else {
-		SPrint(String, sizeof(String) - 1, L"Failed to read gpu-power-prefs");
-		egDisplayMessage(String, &BGColor);
+        switch (Length) {
+            case 8:
+                Offset = 4;
+                break;
+            case 4:
+                Offset = 0;
+                break;
+            default:
+                Offset = 0;
+                /* for debugging */
+                gpu = 0x80 | (Length << 1) | Value[0] & 1;
+        }
+
+        Value[Offset] = gpu;
+        Status = EfivarSetRaw(&Guid, L"gpu-power-prefs", Value, Length, 1);
 	}
 
-	if (Length) {
+	if (Value) {
 		MyFreePool(Value);
-	}
-
-	if (String[0]) {
-		PauseSeconds(5);
 	}
 }
 
@@ -813,7 +808,7 @@ VOID ReadConfig(CHAR16 *FileName)
 
         } else if (MyStriCmp(TokenList[0], L"disable_ext_gpu") && (TokenCount > 1)) {
             /* FIXME use something like Entry->DisableExtGpu and move this elsewhere */
-            if (!MyStriCmp(TokenList[1], L"on")) {
+            if (HandleBoolean(TokenList, TokenCount)) {
                 SetNextBootGpu(1);
             }
 		}
