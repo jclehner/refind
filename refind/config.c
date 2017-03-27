@@ -495,24 +495,24 @@ static VOID SetDefaultByTime(IN CHAR16 **TokenList, OUT CHAR16 **Default) {
 
 static VOID SetNextBootGpu(CHAR8 gpu)
 {
-	EFI_STATUS    Status;
-	CHAR8         *Value;
-	CHAR16        String[256];
-	UINTN         Length, Offset;
-	EFI_GUID      Guid = GPU_POWER_PREFS_GUID_VALUE;
-	EG_PIXEL      BGColor;
+    EFI_STATUS    Status;
+    CHAR8         *Value;
+    CHAR16        String[256];
+    UINTN         Length, Offset;
+    EFI_GUID      Guid = GPU_POWER_PREFS_GUID_VALUE;
+    EG_PIXEL      BGColor;
 
-	BGColor.b = 255;
-	BGColor.g = 175;
-	BGColor.r = 100;
-	BGColor.a = 0;
+    BGColor.b = 255;
+    BGColor.g = 175;
+    BGColor.r = 100;
+    BGColor.a = 0;
 
-	String[0] = 0;
-	Length = 0;
+    String[0] = 0;
+    Length = 0;
     Value = NULL;
 
-	Status = EfivarGetRaw(&Guid, L"gpu-power-prefs", &Value, &Length);
-	if (Status == EFI_SUCCESS) {
+    Status = EfivarGetRaw(&Guid, L"gpu-power-prefs", &Value, &Length);
+    if (Status == EFI_SUCCESS) {
         switch (Length) {
             case 8:
                 Offset = 4;
@@ -528,11 +528,11 @@ static VOID SetNextBootGpu(CHAR8 gpu)
 
         Value[Offset] = gpu;
         Status = EfivarSetRaw(&Guid, L"gpu-power-prefs", Value, Length, 1);
-	}
+    }
 
-	if (Value) {
-		MyFreePool(Value);
-	}
+    if (Value) {
+        MyFreePool(Value);
+    }
 }
 
 // read config file
